@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sayı Tahmin Oyunu</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        const Trophy = () => (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+                <path d="M4 22h16"></path>
+                <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
+                <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
+                <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+            </svg>
+        );
+        
+        const Target = () => (
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="12" cy="12" r="6"></circle>
+                <circle cx="12" cy="12" r="2"></circle>
+            </svg>
+        );
+        
+        const Heart = ({ filled }) => (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+        );
+        
+        const RotateCcw = () => (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                <path d="M3 3v5h5"></path>
+            </svg>
+        );
+        
+        const Zap = () => (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+        );
+
+        function NumberGuessGame() {
+            const [target, setTarget] = useState(0);
+            const [guess, setGuess] = useState('');
+            const [attempts, setAttempts] = useState(3);
+            const [message, setMessage] = useState('');
+            const [gameStatus, setGameStatus] = useState('playing');
+            const [history, setHistory] = useState([]);
+            const [score, setScore] = useState(0);
+
+            useEffect(() => {
+                startNewGame();
+            }, []);
+
+            const startNewGame = () => {
+                setTarget(Math.floor(Math.random() * 100) + 1);
+                setGuess('');
+                setAttempts(3);
+                setMessage('1 ile 100 arasında bir sayı tuttum. Tahmin et!');
+                setGameStatus('playing');
+                setHistory([]);
+            };
+
+            const handleGuess = () => {
+                if (!guess || guess === '') {
+                    setMessage('Lütfen bir sayı girin!');
+                    return;
+                }
+
+                const numGuess = parseInt(guess);
+                
+                if (isNaN(numGuess) || numGuess < 1 || numGuess > 100) {
+                    setMessage('1 ile 100 arasında geçerli bir sayı girin!');
+                    return;
+                }
+
+                const newAttempts = attempts - 1;
+                setAttempts(newAttempts);
+                
+                const newHistory = [...history, { guess: numGuess, attempts: newAttempts + 1 }];
+                setHistory(newHistory);
+
+                if (numGuess === target) {
+                    setMessage('🎉 TEBRİKLER! Doğru tahmin!');
+                    setGameStatus('won');
+                    const points = newAttempts === 2 ? 100 : newAttempts === 1 ? 75 : 50;
+                    setScore(score + points);
+                } else if (newAttempts === 0) {
+                    setMessage(`😔 Oyun bitti! Doğru sayı: ${target}`);
+                    setGameStatus('lost');
+                } else {
+                    const hint = numGuess < target ? '📈 Daha büyük bir sayı!' : '📉 Daha küçük bir sayı!';
+                    setMessage(`${hint} ${newAttempts} deneme hakkın kaldı.`);
+                }
+                
+                setGuess('');
+            };
+
+            const handleKeyPress = (e) => {
+                if (e.key === 'Enter' && gameStatus === 'playing') {
+                    handleGuess();
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
+                    <div className="max-w-md w-full">
+                        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 mb-4 border border-white/20">
+                            <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-2 text-yellow-300">
+                                    <Trophy />
+                                    <span className="text-xl font-bold">{score}</span>
+                                </div>
+                                <div className="flex gap-2">
+                                    {[...Array(3)].map((_, i) => (
+                                        <div key={i} className={i < attempts ? 'text-red-500' : 'text-gray-500'}>
+                                            <Heart filled={i < attempts} />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-8 border border-white/20">
+                            <div className="text-center mb-8">
+                                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full mb-4 shadow-lg">
+                                    <Target />
+                                </div>
+                                <h1 className="text-3xl font-bold text-white mb-2">Sayı Tahmin Oyunu</h1>
+                                <p className="text-blue-200">1-100 arası sayıyı bul!</p>
+                            </div>
+
+                            <div className={`p-4 rounded-xl mb-6 text-center font-semibold transition-all ${
+                                gameStatus === 'won' 
+                                    ? 'bg-green-500/20 text-green-200 border-2 border-green-400' 
+                                    : gameStatus === 'lost'
+                                    ? 'bg-red-500/20 text-red-200 border-2 border-red-400'
+                                    : 'bg-blue-500/20 text-blue-200 border-2 border-blue-400'
+                            }`}>
+                                {message}
+                            </div>
+
+                            {gameStatus === 'playing' && (
+                                <div className="space-y-4">
+                                    <input
+                                        type="number"
+                                        value={guess}
+                                        onChange={(e) => setGuess(e.target.value)}
+                                        onKeyPress={handleKeyPress}
+                                        placeholder="Tahminini gir..."
+                                        min="1"
+                                        max="100"
+                                        className="w-full px-6 py-4 text-xl text-center rounded-xl bg-white/20 border-2 border-white/30 text-white placeholder-white/50 focus:outline-none focus:border-yellow-400 focus:ring-4 focus:ring-yellow-400/30 transition-all"
+                                    />
+                                    <button
+                                        onClick={handleGuess}
+                                        className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white py-4 rounded-xl font-bold text-lg hover:from-yellow-500 hover:to-orange-600 transform hover:scale-105 transition-all shadow-lg flex items-center justify-center gap-2"
+                                    >
+                                        <Zap />
+                                        Tahmin Et
+                                    </button>
+                                </div>
+                            )}
+
+                            {gameStatus !== 'playing' && (
+                                <button
+                                    onClick={startNewGame}
+                                    className="w-full bg-gradient-to-r from-green-400 to-emerald-500 text-white py-4 rounded-xl font-bold text-lg hover:from-green-500 hover:to-emerald-600 transform hover:scale-105 transition-all shadow-lg flex items-center justify-center gap-2"
+                                >
+                                    <RotateCcw />
+                                    Yeni Oyun
+                                </button>
+                            )}
+
+                            {history.length > 0 && (
+                                <div className="mt-6 pt-6 border-t border-white/20">
+                                    <h3 className="text-white font-semibold mb-3 text-center">Tahmin Geçmişi</h3>
+                                    <div className="flex gap-2 justify-center flex-wrap">
+                                        {history.map((h, i) => (
+                                            <div
+                                                key={i}
+                                                className={`px-4 py-2 rounded-lg font-bold ${
+                                                    h.guess === target
+                                                        ? 'bg-green-500 text-white'
+                                                        : h.guess < target
+                                                        ? 'bg-blue-500/40 text-blue-200'
+                                                        : 'bg-red-500/40 text-red-200'
+                                                }`}
+                                            >
+                                                {h.guess}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="text-center mt-4 text-white/60 text-sm">
+                            <p>🎮 Her doğru tahminde puan kazan!</p>
+                            <p className="mt-1">1. denemede: 100 puan | 2. denemede: 75 puan | 3. denemede: 50 puan</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<NumberGuessGame />);
+    </script>
+</body>
+</html>
